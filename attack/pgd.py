@@ -24,7 +24,7 @@ def reconstruct(image):
     pad_bottom = h_rem - pad_top
     padded = tf.pad(rescaled, [[0, 0], [pad_top, pad_bottom], [
                     pad_left, pad_right], [0, 0]])
-    padded.set_shape((input_tensor.shape[0], image.shape.as_list()[-2], 
+    padded.set_shape((image.shape.as_list()[0], image.shape.as_list()[-2], 
                       image.shape.as_list()[-2], 3))
     output = tf.cond(tf.random_uniform(shape=[1])[0] < tf.constant(0.9),
                      lambda: padded, lambda: image)
@@ -46,6 +46,7 @@ def pgd_attack(model_in, model_infer_func, targets, epsilon=16):
         tf variable of attack result.
     """
     target_tensor = tf.constant(targets, dtype=tf.float32)
+    targets = tf.cast(targets, tf.float32)
     
     def attack_step(image, perturb_former):
         """Inner loop of PGD attack
@@ -61,23 +62,26 @@ def pgd_attack(model_in, model_infer_func, targets, epsilon=16):
             perturb_former: Accumulated perturbation for momentum.
         
         Returns:
-            adv_image: Adv image after this iteration
+            adv_image: Adv image after this iteration.
             perturb: Perturbation added on image.
+            
+        Note that image and perturb pixel values here are all 0~255.
         """
         orig_img = image # Save original image.
         
         # Reconsturct image by resizing and random padding.
         image = reconstruct(image)
         image = (image - 127.5) / 128.0
-        image = image + tf.random_uniform(tf.shape(image), minival=-1e-2, maxval=1e-2)
+        image = image + tf.random_uniform(tf.shape(image), minval=-1e-2, maxval=1e-2)
         
         embeddings = model_infer_func(image)
+        embeddings = tf.cast(embeddings, tf.float32)
         embeddings = tf.reshape(embeddings[0], 
                                 [embeddings.shape.as_list()[-1], 1])
         objective = tf.reduce_mean(tf.matmul(targets, embeddings)) # to be maximized
         
         # Normalize perturb and momentum it.
-        perturb = tf.gradients(objective, orig_img)
+        perturb = tf.gradients(objective, orig_img)[0]
         perturb = perturb / tf.reduce_mean(tf.abs(perturb), [1,2,3], keep_dims=True)
         perturb = 0.9*perturb_former + perturb
         

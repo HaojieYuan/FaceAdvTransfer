@@ -5,7 +5,7 @@ import numpy as np
 import facenet.src.align.detect_face as FaceDet
 from scipy import misc
 
-def load_imgdir(source_imgdir, resize=160):
+def load_imgdir(source_imgdir, resize=None):
     """
     Load images in source dir for further use.
     
@@ -20,8 +20,11 @@ def load_imgdir(source_imgdir, resize=160):
     assert os.path.isdir(source_imgdir)
     img_paths = [os.path.join(source_imgdir, image_name) for \
                 image_name in os.listdir(source_imgdir)]
-    imgs = [cv2.resize(cv2.imread(img_path), (resize, resize)) \
-            for img_path in img_paths]
+    if resize:
+        imgs = [cv2.resize(cv2.imread(img_path), (resize, resize)) \
+                for img_path in img_paths]
+    else:
+        imgs = [cv2.imread(img_path) for img_path in img_paths]
     imgs = np.array([cv2.cvtColor(image, cv2.COLOR_BGR2RGB) \
                     for image in imgs])
     
