@@ -1,5 +1,3 @@
-# Now support 1 image at a time.
-
 import tensorflow as tf
 
 def reconstruct(image):
@@ -66,6 +64,7 @@ def pgd_attack(model_in, model_infer_func, targets, epsilon=16):
             perturb: Perturbation added on image.
             
         Note that image and perturb pixel values here are all 0~255.
+        And due to gradients limit, we only process 1 image at a time.
         """
         orig_img = image # Save original image.
         
@@ -76,12 +75,15 @@ def pgd_attack(model_in, model_infer_func, targets, epsilon=16):
         
         embeddings = model_infer_func(image)
         embeddings = tf.cast(embeddings, tf.float32)
-        embeddings = tf.reshape(embeddings[0], 
-                                [embeddings.shape.as_list()[-1], 1])
+        embeddings = tf.reshape(embeddings, 
+                                [embeddings.shape.as_list()[-1], -1])
+        
+        # Multilply tensor shape [target_ebd_n, batch_size].
         objective = tf.reduce_mean(tf.matmul(targets, embeddings)) # to be maximized
         
         # Normalize perturb and momentum it.
         perturb = tf.gradients(objective, orig_img)[0]
+        perturb = tf.stack(perturb)
         perturb = perturb / tf.reduce_mean(tf.abs(perturb), [1,2,3], keep_dims=True)
         perturb = 0.9*perturb_former + perturb
         
