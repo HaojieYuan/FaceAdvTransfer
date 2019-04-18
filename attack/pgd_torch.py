@@ -50,7 +50,7 @@ def cos_objective_func(source, targets):
     targets_norm = torch.norm(targets, 2, 1, keepdim=True)
     norm_m = torch.mm(source_norm, torch.t(targets_norm))
 
-    return (object_norm/norm_m).mean()
+    return (object_m/norm_m).mean()
 
 def pgd_attack(victims_in, targets_in, model, device,
                model_in_min=0., model_in_max=255.,
@@ -83,7 +83,7 @@ def pgd_attack(victims_in, targets_in, model, device,
     targets_in = targets_in.to(device, dtype=torch.float32)
     victims_in = preprocess(victims_in, model_in_min, model_in_max)
     targets_in = preprocess(targets_in, model_in_min, model_in_max)
-    epsilon = preprocess(epsilon, model_in_min, model_in_max)
+    epsilon = epsilon/255.0*(model_in_max-model_in_min)
     model = model.to(device)
     model.eval()
 
@@ -102,8 +102,8 @@ def pgd_attack(victims_in, targets_in, model, device,
         3. Project back to epsilon limit sapce.
         """
         # Set random start point.
-        random_perturb = torch.FloatTensor(attack_result.shape).uniform(-1e-2, 1e-2) \
-                                                               .to(device, dtype=Troch.float32)
+        random_perturb = torch.FloatTensor(attack_result.shape).uniform_(-1e-2, 1e-2) \
+                                                               .to(device, dtype=torch.float32)
         attack_result = attack_result + random_perturb
         attack_result = attack_result.clone().detach().requires_grad_(True) \
                                                       .to(device, dtype=torch.float32)
