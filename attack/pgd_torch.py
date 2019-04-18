@@ -109,7 +109,8 @@ def pgd_attack(victims_in, targets_in, model, device,
                                                       .to(device, dtype=torch.float32)
         
         # Perform 1-step FGSM attack.
-        embeddings = model(attack_result)
+        with torch.no_grad():
+            embeddings = model(attack_result)
         objective = cos_objective_func(embeddings, targets_embeddings)
         objective.backward()
         attack_result = attack_result + step_size*torch.sign(attack_result.grad)
