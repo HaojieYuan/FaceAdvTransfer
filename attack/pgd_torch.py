@@ -116,7 +116,8 @@ def pgd_attack(victims_in, targets_in, model, device,
 
         # Project back to epsilon limit space.
         perturb = attack_result - victims_in
-        perturb = perturb/perturb.max() * epsilon
+        #perturb = perturb/perturb.max() * epsilon
+        perturb = torch.clamp(perturb, -epsilon, epsilon) # what madry did
         attack_result = victims_in + perturb
         attack_result = torch.clamp(attack_result, model_in_min, model_in_max)
 
