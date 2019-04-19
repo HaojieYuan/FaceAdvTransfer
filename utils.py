@@ -151,3 +151,14 @@ def load_state_local(path, model, ignore=[], optimizer=None):
             return checkpoint['step']
     else:
         assert False, "=> no checkpoint found at '{}'".format(path)
+        
+def image2tensor(image_obj):
+    """ After load image by Image.open
+    Transfrom it into 4d torch tensor.
+    Could only apply for a single image.
+    """
+    np_img = np.array(image_obj)
+    np_img = np_img.reshape((-1,*np_img.shape))
+    t_img = torch.from_numpy(np_img)
+    
+    return t_img.permute(0, 3, 1, 2)
