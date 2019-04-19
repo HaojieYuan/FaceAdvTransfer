@@ -125,5 +125,5 @@ def pgd_attack(victims_in, targets_in, model, device,
     # Resize tensor back to 0~255 for save.
     attack_result = (attack_result - model_in_min)/(model_in_max - model_in_min)*255.0
 
-    return attack_result
+    return attack_result.data.detach().cpu()
 
